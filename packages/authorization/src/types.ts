@@ -99,7 +99,7 @@ export interface AuthorizationContext {
  */
 export type Authorizer<
   T extends AuthorizationMetadata = AuthorizationMetadata
-> =
+  > =
   /**
    * @param context: Context information for authorization
    * @param metadata: Metadata representing requirements for authorization
