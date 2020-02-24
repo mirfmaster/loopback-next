@@ -127,11 +127,10 @@ export class DefaultCrudRepository<
       `Entity ${entityClass.name} must have at least one id/pk property.`,
     );
 
-    this.modelClass = this.definePersistedModel(entityClass);
+    this.modelClass = this.ensurePersistedModel(entityClass);
   }
 
-  // Create an internal legacy Model attached to the datasource
-  private definePersistedModel(
+  private ensurePersistedModel(
     entityClass: typeof Model,
   ): typeof juggler.PersistedModel {
     const definition = entityClass.definition;
@@ -147,6 +146,16 @@ export class DefaultCrudRepository<
       // The backing persisted model has been already defined.
       return model as typeof juggler.PersistedModel;
     }
+
+    return this.definePersistedModel(entityClass);
+  }
+
+  // Create an internal legacy Model attached to the datasource
+  protected definePersistedModel(
+    entityClass: typeof Model,
+  ): typeof juggler.PersistedModel {
+    const dataSource = this.dataSource;
+    const definition = entityClass.definition;
 
     // To handle circular reference back to the same model,
     // we create a placeholder model that will be replaced by real one later
@@ -192,7 +201,7 @@ export class DefaultCrudRepository<
   private resolvePropertyType(type: PropertyType): PropertyType {
     const resolved = resolveType(type);
     return isModelClass(resolved)
-      ? this.definePersistedModel(resolved)
+      ? this.ensurePersistedModel(resolved)
       : resolved;
   }
 
