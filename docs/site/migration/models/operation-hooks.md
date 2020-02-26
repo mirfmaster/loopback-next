@@ -6,9 +6,9 @@ sidebar: lb4_sidebar
 permalink: /doc/en/lb4/migration-models-operation-hooks.html
 ---
 
-Operation hooks are not supported in LoopBack 4 yet. It will be, eventually; you
-can follow [this issue](https://github.com/strongloop/loopback-next/issues/1919)
-to keep track of the progress being made.
+Operation hooks are not supported in LoopBack 4 yet. See the
+[Operation hooks for models/repositories spike](https://github.com/strongloop/loopback-next/issues/1919)
+to follow the progress made on this subject.
 
 In the meantime, we are providing a temporary API for enabling Operation hooks
 in LoopBack 4: override `DefaultCrudRepository`'s `definePersistedModel` method
