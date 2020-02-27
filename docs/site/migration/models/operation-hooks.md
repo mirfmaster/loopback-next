@@ -15,12 +15,13 @@ in LoopBack 4: override `DefaultCrudRepository`'s `definePersistedModel` method
 in the model's repository.
 
 The `definePersistedModel` method of `DefaultCrudRepository` returns a model
-instance on which you can apply the
+class on which you can apply the
 [LoopBack 3 operation hooks](https://loopback.io/doc/en/lb3/Operation-hooks.html).
-Make sure to return the model instance from the derived class.
+Make sure to return the model class from your repository's
+`definePersistedModel` method.
 
 Here is an example of a repository implementing `definePersistedModel` and
-applying an operation hook on a model instance:
+applying an operation hook on a model:
 
 ```ts
 class ProductRepository extends DefaultCrudRepository<
@@ -33,11 +34,11 @@ class ProductRepository extends DefaultCrudRepository<
   }
 
   definePersistedModel(entityClass: typeof Product) {
-    const model = super.definePersistedModel(entityClass);
-    model.observe('before save', async ctx => {
+    const modelClass = super.definePersistedModel(entityClass);
+    modelClass.observe('before save', async ctx => {
       console.log(`going to save ${ctx.Model.modelName}`);
     });
-    return model;
+    return modelClass;
   }
 }
 ```

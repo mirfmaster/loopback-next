@@ -1,4 +1,4 @@
-// Copyright IBM Corp. 2019. All Rights Reserved.
+// Copyright IBM Corp. 2020. All Rights Reserved.
 // Node module: @loopback/repository
 // This file is licensed under the MIT License.
 // License text available at https://opensource.org/licenses/MIT
@@ -42,15 +42,15 @@ describe('Operation hooks', () => {
     callCounter: number = 0;
 
     definePersistedModel(entityClass: typeof Product) {
-      const model = super.definePersistedModel(entityClass);
-      model.observe('before save', async ctx => {
+      const modelClass = super.definePersistedModel(entityClass);
+      modelClass.observe('before save', async ctx => {
         this.callCounter++;
       });
 
-      model.observe('after save', async ctx => {
+      modelClass.observe('after save', async ctx => {
         this.callCounter++;
       });
-      return model;
+      return modelClass;
     }
   }
 });
