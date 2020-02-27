@@ -10,7 +10,7 @@ Operation hooks are not supported in LoopBack 4 yet. See the
 [Operation hooks for models/repositories spike](https://github.com/strongloop/loopback-next/issues/1919)
 to follow the progress made on this subject.
 
-In the meantime, we are providing a temporary API for enabling Operation hooks
+In the meantime, we are providing a temporary API for enabling operation hooks
 in LoopBack 4: override `DefaultCrudRepository`'s `definePersistedModel` method
 in the model's repository.
 
@@ -42,3 +42,10 @@ class ProductRepository extends DefaultCrudRepository<
   }
 }
 ```
+
+Although possible, we are not providing an API which directly exposes the
+`observe` method of the model class. The current API makes the registration of
+operation hooks a process that is possible only after the model class is
+attached to the repository and accidental registration of the same operation
+hook multiple times becomes obvious. With an API which directly exposes the
+`observe` method of the model class, this would not have beeb possible.

@@ -14,12 +14,13 @@ describe('Operation hooks', () => {
   let repo: ProductRepository;
   beforeEach(givenProductRepository);
 
+  const beforeSave = 'before save';
+  const afterSave = 'after save';
+  const expectedArray = [beforeSave, afterSave];
+
   it('supports operation hooks', async () => {
     const p = await repo.create({slug: 'pencil'});
-    expect(repo.callCounter).to.equal(2);
-    p.name = 'Red Pencil';
-    await repo.save(p);
-    expect(repo.callCounter).to.equal(4);
+    expect(repo.hooksCalled).to.eql(expectedArray);
   });
 
   function givenProductRepository() {
@@ -39,16 +40,16 @@ describe('Operation hooks', () => {
       super(Product, dataSource);
     }
 
-    callCounter: number = 0;
+    hooksCalled: string[] = [];
 
     definePersistedModel(entityClass: typeof Product) {
       const modelClass = super.definePersistedModel(entityClass);
-      modelClass.observe('before save', async ctx => {
-        this.callCounter++;
+      modelClass.observe(beforeSave, async ctx => {
+        this.hooksCalled.push(beforeSave);
       });
 
-      modelClass.observe('after save', async ctx => {
-        this.callCounter++;
+      modelClass.observe(afterSave, async ctx => {
+        this.hooksCalled.push(afterSave);
       });
       return modelClass;
     }
