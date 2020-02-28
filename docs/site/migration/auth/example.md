@@ -11,7 +11,7 @@ This example is migrated from
 and uses the authentication and authorization system in LoopBack 4 to implement
 the access control.
 
-# App Scenario
+## App Scenario
 
 In this example, we create "Startkicker" (a basic Kickstarter-like application)
 to demonstrate authentication and authorization mechanisms in LoopBack. The
@@ -57,11 +57,12 @@ tutorial.
 
 The LoopBack 4 authorization system gives developers the flexibility to
 implement the RBAC on their own. You can leverage popular third-party libraries
-like [casbin](https://github.com/casbin/casbin) or [oauth0](https://auth0.com/)
+like [casbin](https://github.com/casbin/casbin) or [oAuth0](https://auth0.com/)
 for the role mapping.
 
-This guide includes a demo for using [casbin](#steps-with-casbin) and using
-[oauth0](#steps-with-oauth0)(TBD)
+This guide includes a demo for using
+[casbin](#migrating-example-to-loopback-4-with-casbin) and using
+[oAuth0](#migrating-example-to-loopback-4-with-oauth0)(TBD)
 
 ## Migrating Example to LoopBack 4 with Casbin
 
