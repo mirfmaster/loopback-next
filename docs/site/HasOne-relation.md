@@ -416,6 +416,20 @@ factory `account` for instances of `SupplierRepository`:
   instance
   ([API Docs](https://loopback.io/doc/en/lb4/apidocs.repository.hasonerepository.patch.html))
 
+Notice that navigational properties can not be included in the data for CRUD
+operations (e.g
+`supplierRepository.create({id: 1, name:'invalid request', account:{id: 1, supplierId: 1}})`),
+or it will be rejected with error `Navigational properties are not allowed`. It
+is also recommended to create related models separately after the parent model
+is created. For instance:
+
+```ts
+const sup = await supplierRepository.create({id: 1, name: 'Tammy'});
+const accountData = {id: 1, supplierId: sup.id};
+// create the related account
+supplierRepository.account(sup.id).create(accountData);
+```
+
 For **updating** (full replace of all properties on a `PUT` endpoint for
 instance) a target model you have to directly use this model repository. In this
 case, the caller must provide both the foreignKey value and the primary key

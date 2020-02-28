@@ -277,6 +277,11 @@ model instance (e.g. `order.id`) and returning back the related target model
 instance (e.g. a `Customer` the order belongs to). See also
 [API Docs](https://loopback.io/doc/en/lb4/apidocs.repository.belongstoaccessor.html)
 
+Notice that navigational properties can not be included in the data for CRUD
+operations (e.g
+`orderRepository.create({id: 1, quantity: 0, customerId: 1, customer:{id: 1, name: 'rejected'}})`),
+or it will be rejected with error `Navigational properties are not allowed`.
+
 ## Using BelongsToAccessor in a controller
 
 The same pattern used for ordinary repositories to expose their CRUD APIs via

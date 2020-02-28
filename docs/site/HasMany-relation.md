@@ -416,6 +416,20 @@ factory `orders` for instances of `customerRepository`:
   instance
   ([API Docs](https://loopback.io/doc/en/lb4/apidocs.repository.hasmanyrepository.patch.html))
 
+Notice that navigational properties can not be included in the data for CRUD
+operations (e.g
+`customerRepository.create({id: 1, name:'invalid request', orders:[{id: 1, customerId: 1}]})`),
+or it will be rejected with error `Navigational properties are not allowed`. It
+is recommended to create related models separately after the parent model is
+created. For instance:
+
+```ts
+const myCustomer = await customerRepository.create({id: 1, name: 'Fiorio'});
+const orderData = {id: 1, customerId: myCustomer.id};
+// create the related order
+customerRepository.orders(myCustomer.id).create(orderData);
+```
+
 For **updating** (full replace of all properties on a `PUT` endpoint for
 instance) a target model you have to directly use this model repository. In this
 case, the caller must provide both the foreignKey value and the primary key
