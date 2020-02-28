@@ -5,7 +5,7 @@
 
 import {Getter} from '@loopback/context';
 import assert from 'assert';
-import legacy from 'loopback-datasource-juggler';
+import legacy, {ObserverMixin} from 'loopback-datasource-juggler';
 import {
   AnyObject,
   Command,
@@ -100,7 +100,7 @@ export class DefaultCrudRepository<
   ID,
   Relations extends object = {}
 > implements EntityCrudRepository<T, ID, Relations> {
-  modelClass: juggler.PersistedModelClass;
+  modelClass: juggler.PersistedModelClass & ObserverMixin;
 
   public readonly inclusionResolvers: Map<
     string,
@@ -132,7 +132,7 @@ export class DefaultCrudRepository<
 
   private ensurePersistedModel(
     entityClass: typeof Model,
-  ): typeof juggler.PersistedModel {
+  ): typeof juggler.PersistedModel & ObserverMixin {
     const definition = entityClass.definition;
     assert(
       !!definition,
@@ -144,7 +144,7 @@ export class DefaultCrudRepository<
     const model = dataSource.getModel(definition.name);
     if (model) {
       // The backing persisted model has been already defined.
-      return model as typeof juggler.PersistedModel;
+      return model as typeof juggler.PersistedModel & ObserverMixin;
     }
 
     return this.definePersistedModel(entityClass);
@@ -153,7 +153,7 @@ export class DefaultCrudRepository<
   // Create an internal legacy Model attached to the datasource
   protected definePersistedModel(
     entityClass: typeof Model,
-  ): typeof juggler.PersistedModel {
+  ): typeof juggler.PersistedModel & ObserverMixin {
     const dataSource = this.dataSource;
     const definition = entityClass.definition;
 
@@ -182,7 +182,9 @@ export class DefaultCrudRepository<
       }
       properties[key] = Object.assign({}, value);
     });
-    const modelClass = dataSource.createModel<juggler.PersistedModelClass>(
+    const modelClass = dataSource.createModel<
+      juggler.PersistedModelClass & ObserverMixin
+    >(
       definition.name,
       properties,
       Object.assign(
