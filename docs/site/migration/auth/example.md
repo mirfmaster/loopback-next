@@ -1,3 +1,11 @@
+---
+lang: en
+title: 'Migrating access control example'
+keywords: LoopBack 4.0, LoopBack 4, LoopBack 3, Migration
+sidebar: lb4_sidebar
+permalink: /doc/en/lb4/migration-auth-access-control-example.html
+---
+
 This example is migrated from
 [loopback-example-access-control](https://github.com/strongloop/loopback-example-access-control),
 and uses the authentication and authorization system in LoopBack 4 to implement
@@ -5,97 +13,106 @@ the access control.
 
 # App Scenario
 
-This example is a donation system. Users can view or make donations to projects
-based on their roles. A project is owned by a user, and a user can create a team
-to involve other users as team members. The system has an administration.
+In this example, we create "Startkicker" (a basic Kickstarter-like application)
+to demonstrate authentication and authorization mechanisms in LoopBack. The
+application consists of four types of users:
+
+- guest
+- owner
+- team member
+- administrator
+
+Each user type has permission to perform tasks based on their role and the
+application's ACL (access control list) entries.
 
 Here is the diagram that describes the models:
 
 ![models](../../imgs/tutorials/access-control-migration/auth_example_scenario_model.png)
 
-And the Project endpoints with their allowed roles:
+And the following operations can be processed by different roles:
 
-- /Projects/list-projects
-  - everyone
-- /Projects/view-all
+- /projects/list-projects
+  - guest, admin, owner, teamMember
+- /projects/view-all
   - admin
-- /Projects/{id}/show-balance
+- /projects/{id}/show-balance
   - owner, teamMember
-- /Projects/{id}/donate
+- /projects/{id}/donate
   - admin, owner, teamMember
-- /Projects/{id}/withdraw
+- /projects/{id}/withdraw
   - owner
 
-The diagram for models also include the pre-created data in this application.
+This application includes some pre-created data. They are shown in the above
+diagram. For example, as you can see, u1 owns project1, and u1 created a team
+with u1 and u2 as members. This means u1 is the **owner** of project1, and u1
+and u2 are the **team members** of project1. And u3 is the **admin**.
 
-For example, u1 owns project1, it also creates a team with u1 and u2 as members.
-Which means u1 is the **owner** of project1, and u1 and u2 are the **team
-members** of project1. And u3 is the **admin**.
-
-# Difference
+## Differences Between LoopBack 3 and 4
 
 LoopBack 3 has several built-in models that consists of a RBAC system. The
-models are User, Role, RoleMapping, ACL, AccessToken. You can learn how they
-work together in tutorial
-[Controlling data access](https://loopback.io/doc/en/lb3/Controlling-data-access.html).
+models are `User`, `Role`, `RoleMapping`, `ACL`, and `AccessToken`. You can
+learn how they work together in the
+[Controlling data access](https://loopback.io/doc/en/lb3/Controlling-data-access.html)
+tutorial.
 
-LoopBack 4 authorization system gives developers the flexibility to implement
-the RBAC on their own. You can leverage popular 3rd-party libraries like
-[casbin](https://github.com/casbin/casbin) or [oauth0](https://auth0.com/) for
-the role mapping.
+The LoopBack 4 authorization system gives developers the flexibility to
+implement the RBAC on their own. You can leverage popular third-party libraries
+like [casbin](https://github.com/casbin/casbin) or [oauth0](https://auth0.com/)
+for the role mapping.
 
 This guide includes a demo for using [casbin](#steps-with-casbin) and using
 [oauth0](#steps-with-oauth0)(TBD)
 
-# Steps with Casbin
+## Migrating Example to LoopBack 4 with Casbin
 
-Next let's migrate the LoopBack 3 access control example to LoopBack 4. Here is
-an overview of the steps:
+Let's migrate the LoopBack 3 access control example to LoopBack 4.
+
+Here is an overview of the steps:
 
 - Create models (migrates model properties)
-- Set up login endpoint (migrate User endpoint)
-- Set up project endpoints (migrate Project endpoints)
-- Set up authentication (migrate boot/authentication.js)
-- Set up authorization (This is the core of the tutorial, migrate role resolvers
-  and model acls)
-- Seed data (migrate boot/sample-models.js)
+- Set up login endpoint (migrates User endpoint)
+- Set up project endpoints (migrates Project endpoints)
+- Set up authentication (migrates boot/authentication.js)
+- Set up authorization (This is the core of the tutorial, migrates role
+  resolvers and model acls)
+- Seed data (migrates boot/sample-models.js)
 
-## Create models
+### Creating models
 
-There are 4 models involved in this example. 3 of them are migrated from
+There are four models involved in this example. Three of them are migrated from
 [the original models](https://github.com/strongloop/loopback-example-access-control/tree/master/common/models)
-(Project, Team, User). And we add one more model UserCredentials to separate the
-sensitive information from the User model.
+(`Project`, `Team`, `User`). And we add one more model `UserCredentials` to
+separate the sensitive information from the `User` model.
 
-You can run `lb4 model` to create the 4 models, and run `lb4 repository` to
-create their corresponding persistency layer.
+You can run `lb4 model` to create the 4 models, and then run `lb4 repository` to
+create their corresponding persistency layers.
 
-_LoopBack 3 model provides 3 layers: data shape, persistency, REST APIs, while
-LoopBack 4 model only describes the data shape. Therefore in this section we
-also need to create repositories for data persistency. You can read about their
-difference in document
-[migrating model definitions and built-in APIs](https://loopback.io/doc/en/lb4/migration-models-core.html)_
+_A LoopBack 3 model provides 3 layers: data shape, persistency, REST APIs,
+whereas LoopBack 4 model only describes the data shape. Therefore in this
+section we also need to create repositories for data persistency. You can read
+about the differences in document
+[migrating model definitions and built-in APIs](../models/core.md)._
 
 _To keep the tutorial concise and focus on the core implementation, the detailed
-commands are list in the reference [model creation](#model-creation)._
+commands are listed in the reference [model creation](#model-creation)._
 
-## Set up login endpoint
+### Setting up login endpoint
 
 LoopBack 3 has a default User model with a bunch of pre-defined APIs exposed. In
-this example, since we create the User model from scratch, we need to add the
-required endpoints in the User controller. In the demo we only need
-'User/login'.
+this example, since we create the `User` model from scratch, we need to add the
+required endpoints in the `UserController`. In the demo we only need
+`User/login`.
 
 This application uses token based authentication. A user logs in by providing
 correct credentials (email and password) in the payload of 'User/login', then
 gets a token back with its identity information encoded and includes it in the
 header of next requests.
 
-To create the login endpoint, we first run `lb4 controller` to create a User
-controller (see [user controller creation](#user-controller-creation)). Then add
-a new controller function `login` decorated with the REST decorators that
-describe the request and response (see
-[the complete user controller file](https://github.com/strongloop/loopback-next/blob/example/acl-migration/examples/access-control-migration/src/controllers/user.controller.ts)).
+To create the login endpoint, we first run `lb4 controller` to create a
+`UserController` (see [user controller creation](#user-controller-creation)).
+Then add a new controller function `login` decorated with the REST decorators
+that describe the request and response (see
+[the complete user controller file](https://github.com/strongloop/loopback-next/tree/master/examples/access-control-migration/src/controllers/user.controller.ts)).
 The core logic of `login` does 3 things:
 
 - call `userService.verifyCredentials()` to verify the credentials and find the
@@ -105,11 +122,11 @@ The core logic of `login` does 3 things:
 - call `jwtService.generateToken()` to encode the principal that carries the
   user's identity information into a JSON web token.
 
-To keep the controller file concise and to organize the token and user related
+To keep the controller file concise and to organize the token and user-related
 utils, we will create the token service and user service in section
-[Set up authentication](#set-up-authentication). Now you can just inject them.
+[Setting up authentication](#setting-up-authentication).
 
-## Set up project endpoints
+### Setting up project endpoints
 
 Next let's create the 5 project endpoints which will be used to demo the access
 of different roles. We start from creating a controller for Project (see
@@ -123,11 +140,14 @@ add the following endpoints:
 - `/projects/{id}/withdraw`: withdraw from a project
 
 The complete code can be found in
-[src/controller/project.controller.ts](https://github.com/strongloop/loopback-next/blob/example/acl-migration/examples/access-control-migration/src/controllers/project.controller.ts)
+[src/controller/project.controller.ts](https://github.com/strongloop/loopback-next/tree/master/examples/access-control-migration/src/controllers/project.controller.ts)
 
-## Set up authentication
+### Setting up authentication
 
-This demo uses token based authentication, and uses the jwt authentication
+{% include note.html content=" This section will be simplified by the following GitHub issue: [loopback-next#4753](https://github.com/strongloop/loopback-next/issues/4753)
+" %}
+
+This demo uses token based authentication, and it uses the jwt authentication
 strategy to verify a user's identity. The authentication setup is borrowed from
 [loopback4-example-shopping](https://github.com/strongloop/loopback4-example-shopping/tree/master/packages).
 The authentication system aims to understand **who sends the request**. It
@@ -135,28 +155,28 @@ retrieves the token from a request, decodes the user's information in it as
 `principal`, then passes the `principal` to the authorization system which will
 decide the `principal`'s access later. You can enable the jwt authentication by:
 
-- create the jwt authentication strategy to decode the user profile from token.
-  see
-  [file src/services/jwt.auth.strategy.ts](https://github.com/strongloop/loopback-next/blob/example/acl-migration/examples/access-control-migration/src/services/jwt.auth.strategy.ts)
-- create the token service to organize utils for token operations. see
-  [file src/services/jwt.service.ts](https://github.com/strongloop/loopback-next/blob/example/acl-migration/examples/access-control-migration/src/services/jwt.service.ts)
-- create user service to organize utils for user operations. see
-  [file src/services/user.service.ts](https://github.com/strongloop/loopback-next/blob/example/acl-migration/examples/access-control-migration/src/services/user.service.ts)
-- add OpenAPI security specification to your app so that the explorer has a
-  button to setup the token for secured endpoints. see
-  [file src/services/security.spec.ts](https://github.com/strongloop/loopback-next/blob/example/acl-migration/examples/access-control-migration/src/services/security.spec.ts)
-- set up bindings for the services and mount the authentication module in the
-  application constructor. see
-  [the complete application file](https://github.com/strongloop/loopback-next/blob/example/acl-migration/examples/access-control-migration/src/application.ts)
-- decorate the 4 project endpoints (excluding the public `listProjects`) with
-  `@authenticate('jwt')`. see example for endpoint
-  [viewAll](https://github.com/strongloop/loopback-next/blob/example/acl-migration/examples/access-control-migration/src/controllers/project.controller.ts#L90)
+- creating the jwt authentication strategy to decode the user profile from
+  token. See
+  [file src/services/jwt.auth.strategy.ts](https://github.com/strongloop/loopback-next/tree/master/examples/access-control-migration/src/services/jwt.auth.strategy.ts)
+- creating the token service to organize utils for token operations. See
+  [file src/services/jwt.service.ts](https://github.com/strongloop/loopback-next/tree/master/examples/access-control-migration/src/services/jwt.service.ts)
+- creating user service to organize utils for user operations. see
+  [file src/services/user.service.ts](https://github.com/strongloop/loopback-next/tree/master/examples/access-control-migration/src/services/user.service.ts)
+- adding OpenAPI security specification to your app so that the explorer has an
+  Authorize button to setup the token for secured endpoints. See
+  [file src/services/security.spec.ts](https://github.com/strongloop/loopback-next/tree/master/examples/access-control-migration/src/services/security.spec.ts)
+- setting up bindings for the services and mount the authentication module in
+  the application constructor. See
+  [the complete application file](https://github.com/strongloop/loopback-next/tree/master/examples/access-control-migration/src/application.ts)
+- decorating the 4 project endpoints (excluding the public `listProjects`) with
+  `@authenticate('jwt')`. See example for endpoint
+  [viewAll](https://github.com/strongloop/loopback-next/tree/master/examples/access-control-migration/src/controllers/project.controller.ts#L90)
 
-## Set up authorization
+### Setting up authorization
 
-### Background
+#### Background
 
-The authorization system aims to decide given a principal passed from the
+The authorization system aims to decide, given a principal passed from the
 authentication system, whether it has access to a resource.
 
 In LoopBack 3, the access control rules for APIs are described by a model
@@ -177,10 +197,10 @@ For example, the acl for endpoint `/projects/{id}/findById` is:
 
 It means only team members have access to the resource returned by
 `/projects/{id}/findById`. And the authorization system is responsible to figure
-out whether a principal is the team member of `project${id}`, which is
-considered as role resolving.
+out whether a principal is a team member of `project${id}`, which is considered
+as role resolving.
 
-### Role Resolving
+#### Role Resolving
 
 Role resolving is the core of an RBAC system. In the original application, you
 create and register role resolvers to resolve a role at run time. Role `admin`
@@ -192,7 +212,7 @@ and `teamMember` is defined and registered in
 In the migrated application, we use a 3rd-party library
 [casbin](https://github.com/casbin/casbin) to resolve the role.
 
-### Using Casbin
+#### Using Casbin
 
 - Overview of casbin
 
@@ -219,7 +239,7 @@ describes the shape of request, policy, role mapping, and the decision rules.
 And to optimize the enforcers, policies are divided into multiple smaller ones
 based on roles.
 
-Here is the screenshot for the model file and policy file of role "teamMember",
+Here is the screenshot of the model file and policy file of role "teamMember",
 different colors maps to different concepts:
 
 ![casbin-model-policy](../../imgs/tutorials/access-control-migration/auth_example_casbin_model_policy.png)
@@ -230,11 +250,11 @@ as project1, action as donate to casbin. And since u2 inherits role p1_team, and
 p1_team can perform donate on project1, casbin system returns allow to the
 authorization system.
 
-### Migrating Authorization
+#### Migrating Authorization
 
-First let's migrate the ACLs. The access control information are considered as
-authorization metadata, provided in decorator `@authorize()`. Go back the
-Project controller file, we can now specify the following fields for each
+First let's migrate the ACLs. Access control information is considered as
+authorization metadata, and provided in decorator `@authorize()`. Referring back
+to the Project controller file, we can now specify the following fields for each
 endpoint:
 
 - resource: the resource name, it's 'project' in this controller
@@ -245,30 +265,78 @@ endpoint:
 
 To make the tutorial concise, the code details is omitted here. You can find the
 ACLs and how the endpoints are decorated in file
-[src/controller/project.controller.ts](https://github.com/strongloop/loopback-next/blob/example/acl-migration/examples/access-control-migration/src/controllers/project.controller.ts)
+[src/controller/project.controller.ts](https://github.com/strongloop/loopback-next/tree/master/examples/access-control-migration/src/controllers/project.controller.ts)
 
-Then we write the authorizer that calls casbin enforcers to make decision
+Next, we write the authorizer that calls casbin enforcers to make the decision
 
-(Since the PR is still in review, I will update the part when we agree on the
-details)
+1. Create an authorizer that retrieves the authorization metadata from context,
+   then execute casbin enforcers to make decision.
 
-- Create an authorizer that retrieves the authorization metadata from context,
-  then execute casbin enforcers to make decision
-- Create a voter for instance level endpoints to append the project id to the
-  resource name
-- Create casbin enforcers
-- Write casbin model and policies
-- Casbin persistency and synchronize(2nd Phase implementation, TBD)
-  - when create a new project
-    - create a set of p, project\${id}\_owner, action policies
-    - create a set of p, project\${id}\_team, action policies
-  - add a new user to a team
-    - find the projects owned by the team owner, then create role inherit rules
-      g, u${id}, project${id}\_team
-  - add a new endpoint(operation)
-    - for each of its allowed roles, add p, \${role}, action policy
+_If you are not familiar with the concept authorizer, you can learn it in the
+document
+[Programming Access Policies](../../Loopback-component-authorization#programming-access-policies)_
 
-## Seed Data
+The complete authorizer file can be found in
+[services/casbin.authorizer.ts](https://github.com/strongloop/loopback-next/blob/master/examples/access-control-migration/src/services/casbin.authorizer.ts).
+It retrieves the three required fields from the authorization context: subject
+from `principal`, `resource` as object, and action, to invoke casbin enforcers
+and make decision.
+
+2. Create a voter for instance level endpoints to append the project id to the
+   resource name
+
+Class level means operations applied to all projects like `/projects/*`, whereas
+instance level operation applies to a certain project like `/project{id}/*`. For
+instance level endpoints, the resource name should include the resource's `id`.
+Since the `id` comes from the request, the endpoint metadata cannot provide it
+and therefore we define the pre-process logic in a voter to generate the
+resource name as `project${id}`, then passes it to the authorizer.
+
+The complete voter file can be found in file
+[services/assign-project-instance-id.voter.ts](https://github.com/strongloop/loopback-next/blob/master/examples/access-control-migration/src/services/assign-project-instance-id.voter.ts)
+
+3. Create casbin enforcers
+
+A casbin enforcer is configured with a policy file. It compares the given data
+with the policy file and returns a decision when invoked. To optimize the scope
+and speed of the access check, this example splits the policies into separate
+files per role. The authorizer will only invoke the enforcers for allowed
+role(s).
+
+The complete enforcer file can be found in file
+[services/casbin.enforcers.ts](https://github.com/strongloop/loopback-next/blob/master/examples/access-control-migration/src/services/casbin.enforcers.voter.ts)
+
+4. Write casbin model and policies
+
+Since the model and policy are already covered in section
+[Using Casbin](#using-casbin), we will not repeat it here. The corresponding
+files are defined in folder
+[fixtures/casbin](https://github.com/strongloop/loopback-next/blob/master/examples/access-control-migration/fixtures/casbin).
+
+5. Casbin persistency and synchronize(2nd Phase implementation, TBD)
+
+This will be supported at the 2nd phase of implementation. The plan is to have
+model or operation hooks to update the casbin policies when new data created. It
+requires a persistent storage for casbin policies (see reference in
+[casbin policy persistence](https://github.com/casbin/casbin#policy-persistence)).
+Here is an overview of the hooks:
+
+- when create a new project
+  - create a set of p, project\${id}\_owner, action policies
+  - create a set of p, project\${id}\_team, action policies
+- add a new user to a team
+  - find the projects owned by the team owner, then create role inherit rules g,
+    u${id}, project${id}\_team
+- add a new endpoint(operation)
+  - for each of its allowed roles, add p, \${role}, action policy
+
+#### Summary
+
+The following diagram summarizes the authorization mechanism described above:
+
+![mechanism](../../imgs/tutorials/access-control-migration/auth_example_mechanism.png)
+
+### Seeding Data
 
 The application has pre-created data to try each role's permission. The original
 example seeds data in the boot script, now they are migrated to an observer file
@@ -277,28 +345,30 @@ called `sample.observer.ts`.
 _Since the data are already generated in `db.json`, that observer file is
 skipped by default._
 
-## Try Out
-
-(a question for reviewers: do you prefer to see all the screenshots in this
-section? To be concise I tend to only describe by words, while if the flow is
-not clear enough, I can add pictures)
+### Try It Out
 
 Start the application:
 
 - Run `npm start` to start the application.
 - Open the explorer
 
-Try role 'admin':
+Try the 'admin' role:
 
 - Login as admin first (user Bob)
   - Go to UserController, try endpoint `users/login` with {"email":
     "bob@projects.com", "password": "opensesame"}
+    ![auth_example_login](../../imgs/tutorials/access-control-migration/auth_example_login.png)
   - Get the returned token
-  - Click authorize button and paste the token
+    ![auth_example_get_token](../../imgs/tutorials/access-control-migration/auth_example_get_token.png)
+  - Click the authorize button and paste the token
+    ![auth_example_set_token](../../imgs/tutorials/access-control-migration/auth_example_set_token.png)
 - Try the 5 endpoints, 'show-balance' and 'withdraw' will return 401, others
   succeed
+  - A sample screenshot for 'withdraw':
+    ![auth_example_withdraw](../../imgs/tutorials/access-control-migration/auth_example_withdraw.png)
+    ![auth_example_withdraw_401](../../imgs/tutorials/access-control-migration/auth_example_withdraw_401.png)
 
-Try role 'owner':
+Try the 'owner' role:
 
 - Login as owner (user John)
   - Go to UserController, try endpoint `users/login` with {"email":
@@ -307,7 +377,7 @@ Try role 'owner':
   - Click authorize button and paste the token
 - Try the 5 endpoints, 'view-all' will return 401, others succeed
 
-Try role 'team-member':
+Try the 'team-member' role:
 
 - Login as team-member (user Jane)
   - Go to UserController, try endpoint `users/login` with {"email":
