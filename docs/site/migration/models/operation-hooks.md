@@ -48,4 +48,4 @@ Although possible, we are not providing an API which directly exposes the
 operation hooks a process that is possible only after the model class is
 attached to the repository and accidental registration of the same operation
 hook multiple times becomes obvious. With an API which directly exposes the
-`observe` method of the model class, this would not have beeb possible.
+`observe` method of the model class, this would not have been possible.

@@ -5,7 +5,7 @@
 
 import {Getter} from '@loopback/context';
 import assert from 'assert';
-import legacy, {ObserverMixin} from 'loopback-datasource-juggler';
+import legacy from 'loopback-datasource-juggler';
 import {
   AnyObject,
   Command,
@@ -50,6 +50,7 @@ export namespace juggler {
   export import Transaction = legacy.Transaction;
   // eslint-disable-next-line no-shadow
   export import IsolationLevel = legacy.IsolationLevel;
+  export import ObserverMixin = legacy.ObserverMixin;
 }
 
 function isModelClass(
@@ -100,7 +101,8 @@ export class DefaultCrudRepository<
   ID,
   Relations extends object = {}
 > implements EntityCrudRepository<T, ID, Relations> {
-  modelClass: juggler.PersistedModelClass & ObserverMixin;
+  // Will just need juggler.PersistedModelClass once https://github.com/strongloop/loopback-datasource-juggler/issues/1824 is addressed
+  modelClass: juggler.PersistedModelClass & juggler.ObserverMixin;
 
   public readonly inclusionResolvers: Map<
     string,
@@ -130,9 +132,11 @@ export class DefaultCrudRepository<
     this.modelClass = this.ensurePersistedModel(entityClass);
   }
 
+  // Create an internal legacy Model attached to the datasource
   private ensurePersistedModel(
     entityClass: typeof Model,
-  ): typeof juggler.PersistedModel & ObserverMixin {
+    // Will just need juggler.PersistedModelClass once https://github.com/strongloop/loopback-datasource-juggler/issues/1824 is addressed
+  ): typeof juggler.PersistedModel & juggler.ObserverMixin {
     const definition = entityClass.definition;
     assert(
       !!definition,
@@ -144,16 +148,23 @@ export class DefaultCrudRepository<
     const model = dataSource.getModel(definition.name);
     if (model) {
       // The backing persisted model has been already defined.
-      return model as typeof juggler.PersistedModel & ObserverMixin;
+      // Will just need juggler.PersistedModelClass once https://github.com/strongloop/loopback-datasource-juggler/issues/1824 is addressed
+      return model as typeof juggler.PersistedModel & juggler.ObserverMixin;
     }
 
     return this.definePersistedModel(entityClass);
   }
 
-  // Create an internal legacy Model attached to the datasource
+  /**
+   * Create a model class and attach it to the datasource. This method can be
+   * overriden in sub-classes to acess methods and properties in the generated
+   * model class.
+   * @param entityClass - Legacy entity class
+   */
   protected definePersistedModel(
     entityClass: typeof Model,
-  ): typeof juggler.PersistedModel & ObserverMixin {
+    // Will just need juggler.PersistedModelClass once https://github.com/strongloop/loopback-datasource-juggler/issues/1824 is addressed
+  ): typeof juggler.PersistedModel & juggler.ObserverMixin {
     const dataSource = this.dataSource;
     const definition = entityClass.definition;
 
@@ -183,7 +194,8 @@ export class DefaultCrudRepository<
       properties[key] = Object.assign({}, value);
     });
     const modelClass = dataSource.createModel<
-      juggler.PersistedModelClass & ObserverMixin
+      // Will just need juggler.PersistedModelClass once https://github.com/strongloop/loopback-datasource-juggler/issues/1824 is addressed
+      juggler.PersistedModelClass & juggler.ObserverMixin
     >(
       definition.name,
       properties,
