@@ -156,10 +156,10 @@ export class DefaultCrudRepository<
   }
 
   /**
-   * Create a model class and attach it to the datasource. This method can be
-   * overriden in sub-classes to acess methods and properties in the generated
-   * model class.
-   * @param entityClass - Legacy entity class
+   * Creates a legacy persisted model class, attaches it to the datasource and
+   * returns it. This method can be overriden in sub-classes to acess methods
+   * and properties in the generated model class.
+   * @param entityClass - LB4 Entity constructor
    */
   protected definePersistedModel(
     entityClass: typeof Model,
